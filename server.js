@@ -8,10 +8,36 @@ connectDB();
 
 const app = express();
 
+// ── CORS — allow multiple origins ──
+const ALLOWED_ORIGINS = [
+  'https://pimt-frontend.vercel.app',
+  'https://pimt-erp.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:3001',
+];
+
+// Also add whatever is in FRONTEND_URL env (with https:// guaranteed)
+if (process.env.FRONTEND_URL) {
+  let url = process.env.FRONTEND_URL.trim();
+  if (!url.startsWith('http')) url = 'https://' + url;
+  if (!ALLOWED_ORIGINS.includes(url)) ALLOWED_ORIGINS.push(url);
+}
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'https://pimt-frontend.vercel.app',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS blocked: ${origin}`));
+  },
   credentials: true,
+  methods:  ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
 }));
+
+// Handle preflight for all routes
+app.options('*', cors());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -28,7 +54,7 @@ app.use('/api/leaves',     require('./routes/leaves'));
 app.use('/api/salary',     require('./routes/salary'));
 app.use('/api/leads',      require('./routes/leads'));
 app.use('/api/biometric',  require('./routes/biometric'));
-app.use('/api/groups',     require('./routes/groups'));   // ← single registration
+app.use('/api/groups',     require('./routes/groups'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'OK', timestamp: new Date() }));
 
