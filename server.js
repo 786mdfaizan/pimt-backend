@@ -9,7 +9,7 @@ connectDB();
 const app = express();
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'https://pimt-frontend.vercel.app',
+  origin: process.env.FRONTEND_URL || 'https://pimt-frontend.vercel.app/api',
   credentials: true,
 }));
 app.use(express.json());
